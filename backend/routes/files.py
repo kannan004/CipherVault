@@ -1,24 +1,29 @@
 import os
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from database.database import db
 from models.file import File
 
-from services.encryption import encrypt_file
+from services.encryption import encrypt_file, decrypt_file
 
 
 files = Blueprint("files", __name__)
 
 
 VAULT_FOLDER = "vault"
+UPLOAD_FOLDER = "uploads"
 
 
-if not os.path.exists(VAULT_FOLDER):
-    os.makedirs(VAULT_FOLDER)
+os.makedirs(VAULT_FOLDER, exist_ok=True)
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
+
+# -------------------------
+# Upload + Encryption API
+# -------------------------
 
 @files.route("/upload", methods=["POST"])
 @jwt_required()
@@ -53,7 +58,7 @@ def upload_file():
     )
 
 
-    # Save encrypted file
+    # Store encrypted file
     encrypted_filename = (
         uploaded_file.filename + ".enc"
     )
@@ -70,7 +75,7 @@ def upload_file():
 
 
 
-    # Save metadata
+    # Save file information
     file_record = File(
         filename=uploaded_file.filename,
         filepath=encrypted_path,
@@ -82,8 +87,62 @@ def upload_file():
     db.session.commit()
 
 
-
     return jsonify({
         "message": "File encrypted and uploaded successfully",
         "filename": uploaded_file.filename
     }), 201
+
+
+
+
+# -------------------------
+# Download + Decryption API
+# -------------------------
+
+@files.route("/download/<filename>", methods=["GET"])
+@jwt_required()
+def download_file(filename):
+
+
+    encrypted_path = os.path.join(
+        VAULT_FOLDER,
+        filename + ".enc"
+    )
+
+
+    if not os.path.exists(encrypted_path):
+        return jsonify({
+            "message": "File not found"
+        }), 404
+
+
+
+    # Read encrypted file
+    with open(encrypted_path, "rb") as f:
+        encrypted_data = f.read()
+
+
+
+    # Decrypt file
+    decrypted_data = decrypt_file(
+        encrypted_data
+    )
+
+
+
+    # Temporary decrypted file
+    decrypted_path = os.path.join(
+        UPLOAD_FOLDER,
+        filename
+    )
+
+
+    with open(decrypted_path, "wb") as f:
+        f.write(decrypted_data)
+
+
+
+    return send_file(
+        decrypted_path,
+        as_attachment=True
+    )
