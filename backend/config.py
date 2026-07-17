@@ -5,6 +5,8 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 class Config:
     SECRET_KEY = "CipherVault_Secret_Key_2026"
 
+    JWT_SECRET_KEY = "CipherVault_JWT_Secret_2026"
+
     SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(BASE_DIR, "ciphervault.db")
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
