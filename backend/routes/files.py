@@ -6,15 +6,17 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from database.database import db
 from models.file import File
 
+from services.encryption import encrypt_file
+
 
 files = Blueprint("files", __name__)
 
 
-UPLOAD_FOLDER = "uploads"
+VAULT_FOLDER = "vault"
 
 
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
+if not os.path.exists(VAULT_FOLDER):
+    os.makedirs(VAULT_FOLDER)
 
 
 
@@ -41,19 +43,37 @@ def upload_file():
 
 
 
-    path = os.path.join(
-        UPLOAD_FOLDER,
-        uploaded_file.filename
+    # Read original file
+    file_data = uploaded_file.read()
+
+
+    # Encrypt file
+    encrypted_data = encrypt_file(
+        file_data
     )
 
 
-    uploaded_file.save(path)
+    # Save encrypted file
+    encrypted_filename = (
+        uploaded_file.filename + ".enc"
+    )
+
+
+    encrypted_path = os.path.join(
+        VAULT_FOLDER,
+        encrypted_filename
+    )
+
+
+    with open(encrypted_path, "wb") as f:
+        f.write(encrypted_data)
 
 
 
+    # Save metadata
     file_record = File(
         filename=uploaded_file.filename,
-        filepath=path,
+        filepath=encrypted_path,
         uploaded_by=user_id
     )
 
@@ -64,6 +84,6 @@ def upload_file():
 
 
     return jsonify({
-        "message": "File uploaded successfully",
+        "message": "File encrypted and uploaded successfully",
         "filename": uploaded_file.filename
     }), 201
