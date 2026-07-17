@@ -6,8 +6,9 @@ __pycache__/
 # Environment
 .env
 
-# Secrets
+# Encryption Keys
 secret.key
+backend/secret.key
 
 # VS Code
 .vscode/

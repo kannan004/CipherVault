@@ -1,34 +1,24 @@
 from flask import Flask
-from encryption import encrypt_file, decrypt_file
+from services.encryption import encrypt_file, decrypt_file
 
 app = Flask(__name__)
 
-
-@app.route("/")
+@app.route('/')
 def home():
-    return "Welcome to File Encrypter API!"
+    return '🔐 CipherVault Backend Running'
 
-
-@app.route("/test")
+@app.route('/test')
 def test():
-    message = b"Hello Kannan!"
-
+    message = b'Hello CipherVault!'
     encrypted = encrypt_file(message)
     decrypted = decrypt_file(encrypted)
 
-    return f"""
-    <h2>File Encrypter Test</h2>
+    return f'''
+    <h2>CipherVault Test</h2>
+    <b>Original:</b> {message.decode()}<br><br>
+    <b>Encrypted:</b> {encrypted.decode()}<br><br>
+    <b>Decrypted:</b> {decrypted.decode()}
+    '''
 
-    <b>Original Message:</b><br>
-    {message.decode()}<br><br>
-
-    <b>Encrypted Message:</b><br>
-    {encrypted.decode()}<br><br>
-
-    <b>Decrypted Message:</b><br>
-    {decrypted.decode()}
-    """
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True)
